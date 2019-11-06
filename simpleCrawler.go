@@ -23,6 +23,6 @@ func main() {
 	seedUrl, maxWorkers := parseInput()
 	now := time.Now()
 	Crawler.Process(&seedUrl, maxWorkers)
-	fmt.Println(time.Now().Sub(now))
+	fmt.Printf("Crawling took %v\n", time.Now().Sub(now))
 }
 

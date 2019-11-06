@@ -23,7 +23,6 @@ func FetchRelativeUrlsFromPage(baseURL *string, targetURL string) ([]string, boo
 func httpGet(url string) (*http.Response, error) {
 	res, err := client.Get(url)
 	if err != nil {
-		fmt.Printf("Error fetching %v with error: %v\n", url, err)
 		return nil, err
 	}
 	return res, nil
@@ -35,10 +34,10 @@ func extractRelativeUrls(baseUrl *string, doc *goquery.Document) []string {
 		doc.Find("a").Each(func(i int, s *goquery.Selection) {
 			if link, ok := s.Attr("href"); ok {
 				if strings.HasPrefix(link, *baseUrl) {
-					relativeUrls = append(relativeUrls, link)
+					relativeUrls = append(relativeUrls, strings.TrimSuffix(link, "/"))
 				} else if strings.HasPrefix(link, "/") {
 					resolvedURL := fmt.Sprintf("%s%s", *baseUrl, link)
-					relativeUrls = append(relativeUrls, resolvedURL)
+					relativeUrls = append(relativeUrls, strings.TrimSuffix(resolvedURL, "/"))
 				}
 			}
 		})
