@@ -31,7 +31,7 @@ This project isn't "production ready" due to couple of points:
 - Make the number of cores ```GOMAXPROCS``` configurable, as currently it's ```1```, depending on your number of logical available cores.
 - Sometimes this program might hit ```socket: too many open files``` if you use a lot of workers (depends on your default limits).
     - Your limit for max open files per process (```ulimit -n``` to see the current limit).
-- Handling errors for gracefully: 
+- Handling errors more gracefully: 
     - e.g Currently, Fetcher will swallow the errors if fetching url failed (will assume this url has no children). We should implement retries with exponential backoff.
 - Writing the results to a file, with status update every (e.g 10 seconds) on the console. 
     - Currently, it logs every url found on the console. (you can ``` ./simpleCrawler .. > urls.txt ```)
