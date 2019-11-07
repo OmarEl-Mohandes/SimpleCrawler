@@ -15,7 +15,7 @@ func CrawlN(baseUrl *string, urlToParse string, cache *DataStructures.Concurrent
 		}
 		cache.Store(urlToParse)
 		childrenUrls, _ := Fetcher.FetchRelativeUrlsFromPage(baseUrl, urlToParse)
-		fmt.Printf("Depth: %v cache size: %v URL %v\n", depth, len(cache.Cache), runtime.NumGoroutine())
+		fmt.Printf("Depth: %v #goroutines: %v URL %v\n", depth, runtime.NumGoroutine(), urlToParse)
 		for _, u := range childrenUrls {
 			if _, ok := cache.Load(u); !ok {
 				wg.Add(1)

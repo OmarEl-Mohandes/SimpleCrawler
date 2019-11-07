@@ -1,6 +1,7 @@
 package Crawler
 
 import (
+	"fmt"
 	"log"
 	"os"
 	ds "simpleCrawler/DataStructures"
@@ -13,12 +14,57 @@ const (
 	maxWorkerIdleDuration = time.Second * 5
 )
 
-// Crawl is a goroutine that will act as worker that consumes from the queue given (using In Channel).
+type CrawlManager struct {
+	queue 		 *ds.Queue
+	cache 		 *ds.ConcurrentCache
+	wg    		 *sync.WaitGroup
+	logger  	 *log.Logger
+	baseUrl 	 *string
+	numOfWorkers int
+}
+
+func NewCrawlManger(seedUrl string, numOfWorkers int) *CrawlManager {
+	crawlManager := &CrawlManager{
+		queue:   ds.NewQueue(numOfWorkers),
+		cache:   ds.NewConcurrentCache(),
+		wg:      &sync.WaitGroup{},
+		baseUrl: &seedUrl,
+		logger:  log.New(os.Stdout, "", 0),
+		numOfWorkers: numOfWorkers,
+	}
+	for i := 0 ; i < numOfWorkers ; i ++ {
+		crawlManager.launchWorker()
+	}
+	return crawlManager
+}
+
+func (cr *CrawlManager) Start()  {
+	cr.queue.In<- *cr.baseUrl
+}
+
+func (cr *CrawlManager) WaitUntilWorkersDone()  {
+	cr.wg.Wait()
+}
+
+func (cr *CrawlManager) Shutdown() {
+	defer func() {
+		// Recovering from the negative sync number.
+		recover()
+		fmt.Println("Done!")
+	}()
+	cr.logger.Printf("Sutting Down %v workers..\n", cr.numOfWorkers)
+	for i := 0 ; i < cr.numOfWorkers ; i ++ {
+		cr.wg.Done()
+	}
+}
+
+// Worker is a goroutine that consumes from the queue given (using In Channel).
 // It'll mark the url in the cache if not seen.
 // Then, it fetches the relative urls based on the baseUrl given, and it'll send all new urls (not cached)
 // to the Queue again (using Out channel).
 // If the worker is Idle for maxWorkerIdleDuration, then the worker will quit.
-func crawl(baseUrl *string, queue *ds.Queue, cache *ds.ConcurrentCache, wg *sync.WaitGroup, logger *log.Logger) {
+func (cr *CrawlManager) launchWorker() {
+	cr.wg.Add(1)
 	go func() {
 		idleTimer := time.NewTimer(maxWorkerIdleDuration)
 		resetTimer := func() {
@@ -29,38 +75,25 @@ func crawl(baseUrl *string, queue *ds.Queue, cache *ds.ConcurrentCache, wg *sync
 		}
 		for  {
 			select {
-				case v := <-queue.Out:
+				case v := <-cr.queue.Out:
 					resetTimer()
 					parentUrl := v.(string)
-					if _, ok := cache.Load(parentUrl); ok {
+					if _, ok := cr.cache.Load(parentUrl); ok {
 						continue
 					}
-					logger.Printf("URL found: %v\n", parentUrl)
-					cache.Store(parentUrl)
-					childrenUrls, _ := Fetcher.FetchRelativeUrlsFromPage(baseUrl, parentUrl)
+					cr.logger.Printf("URL found: %v\n", parentUrl)
+					cr.cache.Store(parentUrl)
+					childrenUrls, _ := Fetcher.FetchRelativeUrlsFromPage(cr.baseUrl, parentUrl)
 					for _, u := range childrenUrls {
-						if _, ok := cache.Load(u); !ok {
-							queue.In <- u
+						if _, ok := cr.cache.Load(u); !ok {
+							cr.queue.In <- u
 						}
 					}
 				case <-idleTimer.C:
-					wg.Done()
+					cr.wg.Done()
 					return
 			}
 		}
 	}()
 	return
-}
-
-func Process(seedUrl *string, maxWorkers int) {
-	logger := log.New(os.Stdout, "", 0)
-	var cache = ds.NewConcurrentCache()
-	queue := ds.NewQueue(maxWorkers)
-	wg := &sync.WaitGroup{}
-	wg.Add(maxWorkers)
-	for i := 0 ; i < maxWorkers; i ++ {
-		go crawl(seedUrl, queue, cache, wg, logger)
-	}
-	queue.In <- *seedUrl
-	wg.Wait()
 }
