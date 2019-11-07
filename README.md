@@ -9,7 +9,7 @@ This is a simple crawler program written in Go. Using one url seed, it should fe
 - To test: `go test` . 
 
 
-#### Usage
+### Usage
 
 ```
 $ ./simpleCrawler -s "https://example.com" -w 5000 -w 60
