@@ -24,9 +24,11 @@ Usage of ./simpleCrawler:
 ```
 
 ### Todo
+]
 This project isn't "production ready" due to couple of points:
 
 - Write unit tests for the Crawler & Fetcher packages using [gomock](https://github.com/golang/mock).
+- Write proper documentation for the major parts of the system (Crawler, Queue and Fetcher)
 - Implement politeness delay to not get throttled or cause pain for people.
 - Make the number of cores ```GOMAXPROCS``` configurable, as currently it's ```1```, depending on your number of logical available cores.
 - Sometimes this program might hit ```socket: too many open files``` if you use a lot of workers (depends on your default limits).
