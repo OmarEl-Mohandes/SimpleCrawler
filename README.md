@@ -24,7 +24,7 @@ Usage of ./simpleCrawler:
 ```
 
 ### Todo
-]
+
 This project isn't "production ready" due to couple of points:
 
 - Write unit tests for the Crawler & Fetcher packages using [gomock](https://github.com/golang/mock).
